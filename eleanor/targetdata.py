@@ -23,7 +23,6 @@ import eleanor
 from .ffi import use_pointing_model, load_pointing_model, centroid_quadratic
 from .postcard import Postcard, Postcard_tesscut
 
-
 __all__  = ['TargetData']
 
 class TargetData(object):
@@ -148,7 +147,7 @@ class TargetData(object):
         if self.source_info.premade is True:
             self.load(directory=self.source_info.fn_dir)
 
-        else:            
+        else:
             fnf = True
             # Checks to see if file exists already
             if try_load==True:
@@ -177,6 +176,7 @@ class TargetData(object):
                 if bkg_size is None:
                     bkg_size = width
 
+
                 # Uses the contamination ratio for crowded field if available and 
                 # not already set by the user   
                 if crowded_field is True:
@@ -197,7 +197,7 @@ class TargetData(object):
                     if source.pointing is not None:
                         self.pointing_model = source.pointing
                     else:
-                        self.pointing_model = load_pointing_model(source.pm_dir)
+                        self.pointing_model = load_pointing_model(source.pm_dir, source.sector, source.camera, source.chip)
                 except:
                     self.pointing_model = None
                     
@@ -351,6 +351,7 @@ class TargetData(object):
             self.tpf_flux_bkg = self.bkg_subtraction() + post_bkg
             self.tpf_err = post_err[: , y_low_lim:y_upp_lim, x_low_lim:x_upp_lim]
             self.tpf_err[np.isnan(self.tpf_err)] = np.inf
+
 
         else:            
             if (height > 31) or (width > 31):
@@ -564,7 +565,7 @@ class TargetData(object):
             
             for a in range(len(self.all_apertures)):       
                 try:
-                    all_lc_err[a] = np.sqrt( np.nansum(self.tpf_err**2 * self.all_apertures[a]) )
+                    all_lc_err[a] = np.sqrt( np.nansum(self.tpf_err**2 * self.all_apertures[a], axis=(1,2)))
                     all_raw_lc_pc_sub[a] = np.nansum( (self.tpf * self.all_apertures[a]), axis=(1,2) )
                     
                     oned_bkg = np.zeros(self.tpf.shape)

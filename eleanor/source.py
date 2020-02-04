@@ -24,7 +24,7 @@ from .update import *
 __all__ = ['Source', 'multi_sectors']
 
 
-def multi_sectors(sectors, tic=None, gaia=None, coords=None, tc=False, local=False, post_dir=None, pm_dir=None):
+def multi_sectors(sectors, tic=None, gaia=None, coords=None, name=None, tc=False, local=False, post_dir=None, pm_dir=None):
     """Obtain a list of Source objects for a single target, for each of multiple sectors for which the target was observed.
 
     Parameters
@@ -50,6 +50,8 @@ def multi_sectors(sectors, tic=None, gaia=None, coords=None, tc=False, local=Fal
                 coords, _, _, _ = coords_from_tic(tic)
             elif gaia is not None:
                 coords = coords_from_gaia(gaia)
+            elif name is not None:
+                coords = coords_from_name(name)
 
         if coords is not None:
             if type(coords) is SkyCoord:
@@ -86,6 +88,8 @@ class Source(object):
         The Gaia DR2 source_id.
     coords : tuple or astropy.coordinates.SkyCoord, optional
         The (RA, Dec) coords of the object in degrees or an astropy SkyCoord object.
+    name : str, optional
+        The name of your target (e.g. "HD#####" or "M31").
     fn : str, optional
         Filename of a TPF corresponding to the desired source.
     sector : int or str
@@ -115,18 +119,20 @@ class Source(object):
     all_postcards : list of strs
         Names of all postcards where the source appears.
     """
-    def __init__(self, tic=None, gaia=None, coords=None, fn=None, sector=None, fn_dir=None, tc=False, local=False, post_dir=None, pm_dir=None):
+    def __init__(self, tic=None, gaia=None, coords=None, name=None, fn=None, 
+                 sector=None, fn_dir=None, tc=False, local=False, post_dir=None, pm_dir=None):
         self.tic       = tic
         self.gaia      = gaia
         self.coords    = coords
+        self.name      = name
         self.fn        = fn
         self.premade   = False
         self.usr_sec   = sector
         self.tc        = tc
         self.contratio = None
         self.post_dir  = post_dir
-        self.pm_dir   = None
-        
+        self.pm_dir = pm_dir
+
         if self.pm_dir is None:
             self.pm_dir = self.post_dir
 
@@ -193,7 +199,7 @@ class Source(object):
                 if self.tic is None:
                     self.tic, self.tess_mag, sep, self.tic_version, self.contratio = tic_from_coords(self.coords)
                 else:
-                    self.tess_mag = 999
+                    self.tess_mag = [999]
                     self.tic_version = None
                     self.contratio = 0.0
                 if self.gaia is None:
@@ -205,6 +211,11 @@ class Source(object):
 
             elif self.tic is not None:
                 self.coords, self.tess_mag, self.tic_version, self.contratio = coords_from_tic(self.tic)
+                self.gaia = gaia_from_coords(self.coords)
+
+            elif self.name is not None:
+                self.coords = coords_from_name(self.name)
+                self.tic, self.tess_mag, sep, self.tic_version, self.contratio = tic_from_coords(self.coords)
                 self.gaia = gaia_from_coords(self.coords)
 
             else:
@@ -335,7 +346,7 @@ class Source(object):
 
             if len(postcard_obs) > 0:
                 product_list = Observations.get_product_list(postcard_obs)
-                self.pointing = check_pointing(self.sector, self.camera, self.chip)
+                self.pointing = check_pointing(self.sector, self.camera, self.chip, self.pm_dir)
 
                 if self.pointing is None:
                     extension = ["pc.fits", "bkg.fits", "pm.txt"]
@@ -350,7 +361,12 @@ class Source(object):
                 self.postcard_bkg = results['Local Path'][0].split('/')[-1]
                 self.mast_results = results
                 self.cutout    = None  # Attribute for TessCut only
-                self.pm_dir = self.postcard_path
+                # only downloaded the pointing model if the search for it above failed, so only
+                # update it in that case here
+                if self.pointing is None:
+                    self.pm_dir = self.postcard_path
+                    self.pointing = check_pointing(self.sector, self.camera, self.chip, self.pm_dir)
+
 
             else:
                 print("No eleanor postcard has been made for your target (yet). Using TessCut instead.")
@@ -362,7 +378,7 @@ class Source(object):
             self.postcard_bkg = 'hlsp_eleanor_tess_ffi_' + self.postcard + '_tess_v2_bkg.fits'
             self.postcard = 'hlsp_eleanor_tess_ffi_' + self.postcard + '_tess_v2_pc.fits'
 
-            self.pointing = check_pointing(self.sector, self.camera, self.chip)
+            self.pointing = check_pointing(self.sector, self.camera, self.chip, self.pm_dir)
 
             
             

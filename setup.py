@@ -27,13 +27,10 @@ Changes to v1.0.1 (2019-12-19):
 * Significant speedups when TIC, Coords, and a Gaia ID are all provided
 * Other bug fixes
 
-Changes to v1.0.0 (2019-12-16):
-* Interfaces with MAST for all postcards in sectors 1-13. Use tc=False
-to use these data!
-* Addition of 2d background models
-* Speed enhancements
-* Better handling of edge cases
-* Improvements to PSF modeling
+Changes to v1.0.0 (2020-01-14):
+* Removed some package dependencies\
+* Added clarifications in documentation
+* Added new features to visualization tools
 * Other bugfixes
 """
 
@@ -55,8 +52,8 @@ setup(
     long_description_content_type="text/markdown",
     package_data={'': ['README.md', 'LICENSE']},
     install_requires=[
-        'mplcursors', 'photutils>=0.7', 'tqdm', 'lightkurve>=1.1.0', 'astropy>=3.2.3',
-        'astroquery', 'bokeh', 'fitsio', 'pandas',
+        'photutils>=0.7', 'tqdm', 'lightkurve>=1.1.0', 'astropy>=3.2.3',
+        'astroquery', 'pandas',
         'setuptools>=41.0.0', 
         'tensorflow<=1.14.0', 'vaneska', 'beautifulsoup4>=4.6.0', 'tess-point>=0.3.6'],
     classifiers=[
